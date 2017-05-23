@@ -1,23 +1,14 @@
 #lang turnstile/lang
 
 (require
+  "../helpers.rkt"
   "system-t-dynamics.rkt"
-  (rename-in "system-t-dynamics-lazy.rkt" [evaluate lazy:evaluate]))
+  (rename-in "system-t-dynamics-lazy.rkt" [evaluate lazy-evaluate]))
 
-(provide Nat → s z λ rec #%app :t :t-lazy)
-
-;; A helper macro that essentially prevents "double-quoting" expressions,
-;; whereas plain quote would give us things like '(succ '(succ '0)), due
-;; to how the typechecking macros are expanded.
-(define-syntax (qt-once stx)
-  (syntax-case stx ()
-    [(_ expr)
-     (if (symbol? (syntax->datum #'expr))
-         #'`expr
-         #'expr)]))
+(provide nat → s z λ rec #%app :t :t-lazy)
 
 ;; Types
-(define-base-type Nat)
+(define-base-type nat)
 (define-type-constructor → #:arity = 2)
 
 ;; Statics, following PFPL 9.1a-f.
@@ -28,34 +19,34 @@
 (define-typed-syntax z
   [(~literal z) ≫
    --------
-   [⊢ 0 ⇒ Nat]])
+   [⊢ 0 ⇒ nat]])
 
 (define-typed-syntax (s e) ≫
-  [⊢ e ≫ e- ⇐ Nat]
+  [⊢ e ≫ e- ⇐ nat]
   --------
-  [⊢ (#%app- list 'succ (qt-once e-)) ⇒ Nat])
+  [⊢ (#%app- list 'succ (qo e-)) ⇒ nat])
 
-(define-typed-syntax (λ (x:id : T_1:type) e) ≫
-  [[x ≫ x- : T_1] ⊢ e ≫ e- ⇒ T_2]
+(define-typed-syntax (λ (x:id : τ_1:type) e) ≫
+  [[x ≫ x- : τ_1] ⊢ e ≫ e- ⇒ τ_2]
   --------
   ; some massaging to handle argument scoping correctly
   [⊢ (let- ([x-- (#%app- gensym)])
-           (#%app- list 'lam x-- (#%app- substitute x-- (qt-once x-) (qt-once e-))))
-     ⇒ (→ T_1 T_2)])
+           (#%app- list 'lam x-- (#%app- substitute x-- (qo x-) (qo e-))))
+     ⇒ (→ τ_1 τ_2)])
 
 (define-typed-syntax rec #:datum-literals (\{ \} ↪ s z with)
   [(_ e {z ↪ e0 s (x:id) with y:id ↪ e1}) ≫
-   [⊢ e ≫ e- ⇐ Nat]
-   [⊢ e0 ≫ e0- ⇒ T]
-   [[x ≫ x- : Nat] [y ≫ y- : T] ⊢ e1 ≫ e1- ⇐ T]
+   [⊢ e ≫ e- ⇐ nat]
+   [⊢ e0 ≫ e0- ⇒ τ]
+   [[x ≫ x- : nat] [y ≫ y- : τ] ⊢ e1 ≫ e1- ⇐ τ]
    --------
-   [⊢ (#%app- list 'rec (qt-once e-) (qt-once e0-) (qt-once x-) (qt-once y-) (qt-once e1-)) ⇒ T]])
+   [⊢ (#%app- list 'rec (qo e-) (qo e0-) (qo x-) (qo y-) (qo e1-)) ⇒ τ]])
 
 (define-typed-syntax (#%app e1 e2) ≫
-  [⊢ e1 ≫ e1- ⇒ (~→ T_in T_out)]
-  [⊢ e2 ≫ e2- ⇐ T_in]
+  [⊢ e1 ≫ e1- ⇒ (~→ τ_in τ_out)]
+  [⊢ e2 ≫ e2- ⇐ τ_in]
   --------
-  [⊢ (#%app- list 'ap (qt-once e1-) (qt-once e2-)) ⇒ T_out])
+  [⊢ (#%app- list 'ap (qo e1-) (qo e2-)) ⇒ τ_out])
 
 ;; Wrappers for System T expressions which pass the (type-checked) quoted
 ;; list representation to the evaluator. This connects the statics, given
@@ -64,4 +55,4 @@
  (#%app- to-number (#%app- evaluate e)))
 
 (define-syntax-rule (:t-lazy e)
-  (#%app- lazy:evaluate e))
+  (#%app- lazy-evaluate e))
