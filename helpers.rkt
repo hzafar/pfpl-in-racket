@@ -15,7 +15,7 @@
 (define (substitute val var expr)
   (cond [(empty? expr) empty]
         [(equal? var expr) val]
-        [(symbol? expr) expr]
+        [(or (symbol? expr) (string? expr) (number? expr)) expr]
         [(equal? var (first expr)) (cons val (substitute val var (rest expr)))] 
         [(cons? (first expr)) (cons (substitute val var (first expr)) (substitute val var (rest expr)))]
         [else (cons (first expr) (substitute val var (rest expr)))]))
