@@ -25,7 +25,7 @@
 (define-typed-syntax (l e) ≫
   [⊢ e ≫ e- ⇒ (~× τ_1 τ_2)]
   --------
- [⊢ (list 'left (qo e-)) ⇒ τ_1])
+  [⊢ (list 'left (qo e-)) ⇒ τ_1])
 
 (define-typed-syntax (r e) ≫
   [⊢ e ≫ e- ⇒ (~× τ_1 τ_2)]
